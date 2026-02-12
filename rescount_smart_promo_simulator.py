@@ -6,33 +6,51 @@ from PIL import Image
 icon_path = "rescount_icon.jpg"
 logo_path = "rescount_logo.png"
 
+# --- Load images ---
 page_icon_img = Image.open(icon_path)
 logo_img = Image.open(logo_path)
 
-# --- Page config (icon as image) ---
+# --- Page config ---
 st.set_page_config(
     page_title="ResCount — Démo Smart Promo",
-    page_icon=page_icon_img,   # ✅ image icon
+    page_icon=page_icon_img,
     layout="wide",
 )
 
-# --- Optional: Hide Streamlit chrome for a cleaner demo ---
-HIDE_STYLE = """
+# --- UI polish: hide Streamlit chrome + add theme-aware logo container ---
+CUSTOM_CSS = """
 <style>
+/* Hide Streamlit chrome for a cleaner landing feel */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 .block-container {padding-top: 1.2rem;}
+
+/* Center logo wrapper */
+.rescount-logo-wrap{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  margin: 6px 0 14px 0;
+}
+
+/* Slightly stronger separation in dark mode */
+@media (prefers-color-scheme: dark){
+  .rescount-logo-box{
+    border: 1px solid rgba(244,234,199,.65);
+    box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  }
+}
 </style>
 """
-st.markdown(HIDE_STYLE, unsafe_allow_html=True)
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
-# --- Logo (Top Center) ---
+# --- Logo (Top Center) inside colored box ---
 left, center, right = st.columns([1, 2, 1])
 with center:
+    st.markdown('<div class="rescount-logo-wrap"><div class="rescount-logo-box">', unsafe_allow_html=True)
     st.image(logo_img, use_container_width=True)
-
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
 # Paste your full HTML here (exactly as-is)
 HTML = r"""<!doctype html>
