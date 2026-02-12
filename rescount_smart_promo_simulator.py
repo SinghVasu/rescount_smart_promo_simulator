@@ -3,51 +3,76 @@ import streamlit.components.v1 as components
 from PIL import Image
 
 # --- Load icon + logo images ---
-icon_path = "rescount_icon.jpg"
-logo_path = "rescount_logo.png"
+page_icon_img = "rescount_icon.jpg"
+logo_img = "rescount_logo_black_background.png"
 
-# --- Load images ---
-page_icon_img = Image.open(icon_path)
-logo_img = Image.open(logo_path)
-
-# --- Page config ---
 st.set_page_config(
     page_title="ResCount — Démo Smart Promo",
     page_icon=page_icon_img,
     layout="wide",
 )
 
-# --- UI polish: hide Streamlit chrome + add theme-aware logo container ---
-CUSTOM_CSS = """
-<style>
-/* Hide Streamlit chrome for a cleaner landing feel */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-.block-container {padding-top: 1.2rem;}
+# --- Clean look + logo container ---
+st.markdown(
+    """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .block-container {padding-top: 1.2rem;}
 
-/* Center logo wrapper */
-.rescount-logo-wrap{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  margin: 6px 0 14px 0;
-}
+    .rescount-logo-wrap{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin: 6px 0 14px 0;
+    }
+    @media (prefers-color-scheme: dark){
+      .rescount-logo-box{
+        border: 1px solid rgba(244,234,199,.65);
+        box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
-/* Slightly stronger separation in dark mode */
-@media (prefers-color-scheme: dark){
-  .rescount-logo-box{
-    border: 1px solid rgba(244,234,199,.65);
-    box-shadow: 0 12px 30px rgba(0,0,0,.35);
-  }
-}
-</style>
-"""
-st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
+# --- ✅ Scroll bridge (JS that REALLY runs) ---
+components.html(
+    """
+    <script>
+    (function () {
+      // Avoid registering multiple times on reruns
+      if (window.parent && window.parent.__RESCOUNT_SCROLL_BRIDGE__) return;
+      if (window.parent) window.parent.__RESCOUNT_SCROLL_BRIDGE__ = true;
 
-# --- Logo (Top Center) inside colored box ---
-left, center, right = st.columns([1, 2, 1])
-with center:
+      const parentWin = window.parent;
+
+      function doScroll(action) {
+        try {
+          if (action === "TOP") {
+            parentWin.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+          } else if (action === "UP_A_BIT") {
+            parentWin.scrollBy({ top: -300, left: 0, behavior: "smooth" });
+          }
+        } catch (e) {}
+      }
+
+      parentWin.addEventListener("message", function (event) {
+        const d = event && event.data ? event.data : null;
+        if (!d || d.type !== "RESCOUNT_SCROLL") return;
+        doScroll(d.action);
+      });
+    })();
+    </script>
+    """,
+    height=0,
+)
+
+# --- Logo (Top Center) ---
+l, c, r = st.columns([1, 2, 1])
+with c:
     st.markdown('<div class="rescount-logo-wrap"><div class="rescount-logo-box">', unsafe_allow_html=True)
     st.image(logo_img, use_container_width=True)
     st.markdown('</div></div>', unsafe_allow_html=True)
@@ -1048,6 +1073,7 @@ HTML = r"""<!doctype html>
       }
       $("modalSummary").textContent = buildSummary();
       $("modalBack").style.display = "flex";
+      try { window.top.postMessage({ type: "RESCOUNT_SCROLL", action: "UP_A_BIT" }, "*"); } catch(e) {}
     });
 
     $("closeModal").addEventListener("click", ()=> $("modalBack").style.display = "none");
@@ -1070,6 +1096,7 @@ HTML = r"""<!doctype html>
   setDefaultDates();
   bind();
   updatePreview();
+  try { window.top.postMessage({ type: "RESCOUNT_SCROLL", action: "TOP" }, "*"); } catch(e) {}
 </script>
 </body>
 </html>"""
